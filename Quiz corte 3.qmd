@@ -1,0 +1,394 @@
+---
+title: "Quiz simulación corte 3"
+author: "Juan Monroy"
+format: docx
+editor: visual
+---
+
+# Simulación quiz corte 3
+
+A continuación se propone un conjunto de actividades las cuales usted debe desarrollar en su totalidad. Todos las acciones que realice para buscar soluciones a cada situación propuesta le permitirá profundizar sobre los diferentes temas
+desarrollados en el curso de Simulación Estadística.
+Para presentar los resultados se tendrá en cuenta lo siguiente:
+ 1. El desarrollo de cada actividad deberá ser presentada en un informe generado en LaTeX o en su defecto Quarto del lenguaje de programación R.
+2. La solución a cada actividad debe escribirse en lenguaje técnico y mostrando cada procedimiento que se utilice.
+3. Si se requiere la implementación de simulaciones en R, los códigos utilizados debes ser almacenados en el repositorio GitHub el cual debe ser de carácter público, en caso de no serlo deberá, compartirse de manera privada con con el docente.
+
+## Actividades
+
+ 1. Utilizar el método de integración Monte Carlo para evaluar la integral
+
+$$
+I = \int_0^1 [Cos(50x) + Sen(20x)]^2
+$$
+
+Solución
+
+$$
+I = \int_0^1 [Cos^2(50x) + 2cos(50x)sen(20x) + Sen^2(20x)]dx
+$$
+
+Separar la integral
+
+$$
+I = \int_0^1 [Cos^2(50x)dx  + \int_0^1 2cos(50x)sen(20x)dx + \int_0^1 Sen^2(20x)]dx
+$$
+
+Por propiedades
+
+$$
+Cos^2(x) = \frac{1 + Cos(2x)}{2}, 2CosASenB =Sen(A+B) - Sen(A-B), Sen^2(x) = \frac{1-Cos(2x)}{2}
+$$
+
+Entonces
+
+$$
+\begin{aligned}    \text{Sustitución } u &= 50x \quad & m &= 20x\end{aligned}
+$$
+
+$$                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+\begin{aligned} du &= 50 dx \quad & dm &= 20dx\end{aligned}$$
+
+$$
+\begin{aligned}  dx &= \frac{du}{50} \quad & dx &= \frac{dm}{20}\end{aligned}
+$$
+
+$$
+I = \frac{1}{50}\int_0^1 \frac{1+Cos(2u)}{2} du +  \int_0^1 [Sen(70x) - Sen(30x)] dx + \frac{1}{20}\int_0^1\frac{1-Cos(2u)}{2}du 
+$$
+
+$$
+I|_0^1 = \frac{1}{50}[25x +\frac{Sen(100x)}{4}] - \frac{1}{70}Cos(70x) + \frac{1}{30}Cos(30x) + \frac{1}{20} [10x - \frac{Sen(40x)}{4} ]
+$$
+
+$$
+I = 1 + \frac{Sen(100)}{200} - \frac{1}{70}Cos(70) + \frac{1}{30}Cos(30) - \frac{Sen(40)}{80} - [-\frac{1}{70} + \frac{1}{30}]
+$$
+
+$$
+I = \frac{103}{105} + \frac{sen(100)}{200} -\frac{sen(40)}{80} +\frac{cos(30)}{30}-\frac{cos(70)}{70}
+$$
+
+```{r}
+I = 103/105 + sin(100)/200 - sin(40)/80 + cos(30)/30 - cos(70)/70
+I
+```
+
+## Monte Carlo
+
+Hacer la integral por el método montecarlo
+
+```{r}
+
+set.seed(20000)
+# parámetros de la simulación 
+a <- 0
+b <- 1
+m <- 20000
+# Generación de números aleatorios y cálculo de la integral por Monte Carlo
+aleatorio <- runif(m)
+funcion <- (cos(50*aleatorio)+ sin(20*aleatorio))^2
+theta <- (b-a)*funcion /m
+media <- sum(theta)
+cat("El valor de la integral es", media,"\n")
+```
+
+Asignamos la función y generamos datos aleatorios y calculamos el error estándar, mostrando la evolución de las estimaciones mientras aumenta el tamaño de la muestra
+
+```{r,warning=FALSE,message=FALSE,echo=FALSE}
+# Cálculo de la media acumulada y error estándar para cada punto
+estimates <- cumsum((b - a) * funcion) / (1:m)
+error_std <- sqrt(cumsum(((b - a) * funcion - estimates)^2)) / (1:m)
+
+# Graficar la evolución de las estimaciones y el error estándar
+plot(estimates, type = "l", col = "#008B8B", ylim = range(c(estimates - error_std, estimates + error_std)),
+     ylab = "Estimación", xlab = "Número de Simulaciones (m)", main = "Evolución de la Estimación y Error Estándar")
+lines(estimates + error_std, col = "#FFB90F", lty = 2)
+lines(estimates - error_std, col = "#FFB90F", lty = 2)
+legend("topright", legend = c("Estimación Monte Carlo", "Intervalo con Error Estándar"), col = c("#008B8B", "#FFB90F"), lty = 1:2)
+# Añadir la línea horizontal para el valor real de la integral
+abline(h = media, col = "#7FFF00", lty = 3, lwd = 2)
+legend("topright", legend = c("Estimación Monte Carlo", "Intervalo con Error Estándar", "Valor Real de la Integral"),
+       col = c("#008B8B", "#FFB90F", "#7FFF00"), lty = c(1, 2, 3))
+
+```
+
+Esta gráfica ilustra el comportamiento esperado en una simulación de Monte Carlo: al aumentar el número de puntos, la precisión de la estimación mejora (reflejado en un menor error estándar) y la estimación de la integral se estabiliza en un valor constante. Este comportamiento demuestra la eficiencia del método de Monte Carlo, pero también muestra que para alcanzar una alta precisión, es necesario utilizar una cantidad de muestras.
+
+2.  Para el desarrollo de este ejercicio tenga en cuenta lo siguiente:
+    Si X1,X2,...,Xn es una muestra aleatoria de una distribución normal, n ≥ 2 y S2 es la varianza muestral, entonces
+
+    $$
+    V = \frac{(n-1)S^2}{\sigma^2} \sim \chi^2(n-1)
+    $$
+
+Un intervalo de confianza de una sola vía 100(1−α)% está dado por
+
+$$
+\left( 0, \frac{(n - 1) S^2}{\chi^2_\alpha} \right)
+$$
+
+donde χ2α es el α-cuantil de la distribución χ2(n − 1).
+Utilizar el método Monte Carlo para estimar el nivel de confianza en la construcción de un intervalo de confianza de una sola vía para la varianza, tomando como referencia una muestra aleatoria de tamaño n= 20 de una distribución
+
+$$
+N(0, \sigma^2 = 4)
+$$
+
+Para el procedimiento realice m = 1000 réplicas y tome α = 0.05.
+Nota: Recuerde que el objetivo final es establecer la proporción de veces que la varianza queda contenida en los intervalos construidos.
+
+Se define una semilla, se asigna la función, se definen las 1000 replicas con una muestra de 20 cada una y después se calculan las varianzas para compararlas con el intervalo y calcular la proporción de veces que la varianza(4) queda contenida en el intervalo.
+
+```{r,warning=FALSE}
+set.seed(420)
+intervalo <- function(x) (((length(x) - 1))*var(x)/qchisq(p = 0.05 , df = length(x) -1))
+
+replicas <- round(matrix(rnorm(n = 1000*20, mean = 0, sd=2), nrow = 1000, ncol = 20),3)
+limitesup<- apply(replicas, 1, intervalo)
+proporcion <- mean(limitesup >= 4)
+proporcion
+```
+
+3\. Para la simulación del punto 2, se partió del supuesto que la variable se distribuye normal, ¿qué sucede si la población
+muestreada no es normal? Por ejemplo, suponer que la población muestreada es χ2(2) y que tiene una varianza de 4.
+
+Repetir la simulación, reemplazando las N(0,4) muestras con χ2(2) muestras.
+
+En este caso los datos que simulamos se distribuyen chi-cuadrado tal como inidica el ejericicio
+
+```{r,echo=FALSE}
+set.seed(420)
+
+replicas2 <- matrix(rchisq(n = 1000 * 20, df = 2), nrow = 1000, ncol = 20)
+
+limites<- apply(replicas2, 1, intervalo)
+proporcion <- mean(limites >= 4)
+proporcion
+```
+
+Podemos observar que la proporción de veces que la varianza queda contenida en los intervalos es menor a cuando los datos se distribuyen normal.
+
+4.  Consultar sobre el método denominado Muestreador de Gibbs (Gibbs Sampler), explicar en qué consite, en qué
+
+    casos se utiliza, cuál es el algoritmo general que lo define, presentar un ejemplo de aplicación.
+
+El **Muestreador de Gibbs** (Gibbs Sampler) es un método de muestreo utilizado en estadística y aprendizaje automático para generar muestras de una distribución de probabilidad multivariada. Este enfoque es especialmente útil cuando la distribución conjunta de las variables es difícil de muestrear directamente, pero las distribuciones condicionales son más fáciles de manejar.
+
+Se basa en la idea de muestrear de forma iterativa a partir de las distribuciones condicionales de cada variable, dado el resto de las variables. En lugar de muestrear de la distribución conjunta directamente, se actualiza una variable a la vez, manteniendo las demás fijas. Este proceso se repite para todas las variables en varias iteraciones, generando así una cadena de Markov que converge a la distribución conjunta deseada. (Una **cadena de Markov** es un modelo matemático, este tipo de modelo se basa en el principio de **Markov**, que establece que el futuro de un sistema depende únicamente de su estado presente y no de cómo llegó a ese estado. Esto se conoce como la **propiedad de Markov** o **memoria corta**)
+
+## Algoritmo General
+
+El algoritmo del Muestreador de Gibbs se puede describir de la siguiente manera:
+
+1.  **Inicialización**: Seleccionar valores iniciales para todas las variables de interés $$X1,X2,…,Xd$$
+
+2.  **Iteración**: Para cada iteración t
+
+    -   Para cada variable $x_i$​ (donde i=1,2,…,d):
+
+        1.  Muestrear $X_i^{(t)}$ de la distribución condicional
+
+            $$
+            P\left(X_i \mid X_1(t), X_2(t), \dots, X_{i-1}(t), X_{i+1}(t-1), \dots, X_d(t-1)\right)
+            $$
+
+3.  **Repetir**: Continuar el proceso hasta que se alcance un número suficiente de muestras o hasta que se cumplan criterios de convergencia.
+
+4.  **Descartar**: A menudo se descartan las primeras n muestras (conocido como "burn-in") para eliminar la dependencia de las condiciones iniciales.
+
+5.  **Análisis**: Utilizar las muestras restantes para realizar inferencias sobre las variables de interés.
+
+## ¿Cuándo se utiliza?
+
+El Muestreador de Gibbs se utiliza en diversas situaciones, tales como:
+
+1.  **Modelos de Inferencia Bayesiana**
+
+2.  **Modelos de Mezcla**
+
+3.  **Redes Bayesianas**
+
+4.  **Estimación de parámetros en modelos de variables latentes**
+
+### Ejemplo de aplicación
+
+Evaluar la efectividad de un nuevo medicamento para reducir la presión arterial. Tienes datos de pacientes que recibieron el tratamiento y deseas analizar dos variables:
+
+1.  **Reducción en la presión arterial**.
+
+2.  **Dosis del medicamento administrada**.
+
+La relación entre estas dos variables puede ser complicada, y además, podría depender de características individuales de los pacientes (como la edad, el peso, o condiciones previas). Por lo que podemos usar el muestreador de Gibbs.
+
+### Suposiciones del Ejemplo
+
+-   Cada paciente tiene una reducción de presión arterial que depende de la dosis del medicamento y de un efecto aleatorio asociado a cada paciente.
+
+-   Queremos inferir la media y la varianza del efecto del medicamento, así como el efecto aleatorio específico de cada paciente.
+
+-   La **reducción de presión arterial** de cada paciente sigue una distribución normal, donde la media depende de la dosis administrada y de un efecto individual para cada paciente.
+
+-   Los **efectos individuales de los pacientes** también siguen una distribución normal.
+
+$$
+Y_i = \text{Reducción de presión arterial para el paciente i}
+$$
+
+$$
+\beta_0 = \text{Es la media base del medicamento}
+$$
+
+$$
+\beta_1 = \text{Es el efecto de la dosis del medicamento}
+$$
+
+$$
+\theta_i = \text{Es el efecto individual del paciente i}
+$$
+
+$$Y_i \sim N(\beta_0 + \beta_1 \cdot \text{Dosis}_i + \theta_i, \sigma^2)$$
+
+$$\theta_i \sim N(0, \tau^2)$$
+
+```{r,warning=FALSE}
+library(mvtnorm)
+set.seed(123)  # Fijar la semilla para reproducibilidad
+n_pacientes <- 50   # Número de pacientes
+dosis <- runif(n_pacientes, 1, 10)  # Dosis aleatoria entre 1 y 10
+beta0_real <- 5    # Efecto base real
+beta1_real <- 2    # Efecto de la dosis real
+sigma_real <- 1    # Desviación estándar del error real
+tau_real <- 0.5    # Desviación estándar del efecto aleatorio real
+
+# Generar efectos aleatorios para cada paciente
+efectos_aleatorios <- rnorm(n_pacientes, mean = 0, sd = tau_real)
+
+# Generar reducciones de presión arterial
+reduccion <- beta0_real + beta1_real * dosis + efectos_aleatorios + rnorm(n_pacientes, 0, sigma_real)
+datos <- data.frame(Paciente = 1:n_pacientes, Dosis = dosis, Reduccion = reduccion)
+datos
+```
+
+Los **valores verdaderos o "reales"** de los parámetros en nuestro conjunto de datos simulado. Estos son los valores que establecimos intencionalmente para generar los datos de reducción de presión arterial. Es decir, los fijamos de antemano para poder crear un escenario de simulación. En un contexto real, estos serían los **valores que queremos estimar** con el muestreador de Gibbs.
+
+El efecto aleatorio hace referencia a las **diferencias individuales** que no se explican por la dosis del medicamento.
+
+```{r,warning=FALSE}
+
+# Inicializar valores
+n_iteraciones <- 5000  # Número de iteraciones del Muestreador de Gibbs
+beta0 <- numeric(n_iteraciones)  # Almacenar valores de beta0
+beta1 <- numeric(n_iteraciones)  # Almacenar valores de beta1
+sigma2 <- numeric(n_iteraciones) # Almacenar valores de sigma^2
+tau2 <- numeric(n_iteraciones)   # Almacenar valores de tau^2
+theta <- matrix(0, nrow = n_pacientes, ncol = n_iteraciones)  # Efectos aleatorios
+
+# Valores iniciales
+beta0[1] <- 0
+beta1[1] <- 1
+sigma2[1] <- 1
+tau2[1] <- 1
+
+# Muestreador de Gibbs
+for (t in 2:n_iteraciones) {
+  # 1. Muestrear theta (efecto aleatorio de cada paciente)
+  for (i in 1:n_pacientes) {
+    var_theta <- 1 / (1/tau2[t-1] + 1/sigma2[t-1])
+    media_theta <- var_theta * (1/sigma2[t-1] * (datos$Reduccion[i] - beta0[t-1] - beta1[t-1] * datos$Dosis[i]))
+    theta[i, t] <- rnorm(1, mean = media_theta, sd = sqrt(var_theta))
+  }
+  
+  # 2. Muestrear beta0 y beta1
+  X <- cbind(1, datos$Dosis)
+  reduccion_ajustada <- datos$Reduccion - theta[, t]
+  XtX_inv <- solve(t(X) %*% X)
+  media_beta <- XtX_inv %*% t(X) %*% reduccion_ajustada
+  varianza_beta <- sigma2[t-1] * XtX_inv
+  betas <- mvtnorm::rmvnorm(1, mean = media_beta, sigma = varianza_beta)
+  beta0[t] <- betas[1]
+  beta1[t] <- betas[2]
+  
+  # 3. Muestrear sigma2
+  residuos <- datos$Reduccion - beta0[t] - beta1[t] * datos$Dosis - theta[, t]
+  sigma2[t] <- 1 / rgamma(1, shape = n_pacientes / 2, rate = sum(residuos^2) / 2)
+  
+  # 4. Muestrear tau2
+  tau2[t] <- 1 / rgamma(1, shape = n_pacientes / 2, rate = sum(theta[, t]^2) / 2)
+}
+
+# Resultados
+cat("Estimación de beta0 (efecto base):", mean(beta0[-(1:1000)]), "\n")
+cat("Estimación de beta1 (efecto de la dosis):", mean(beta1[-(1:1000)]), "\n")
+cat("Estimación de sigma:", sqrt(mean(sigma2[-(1:1000)])), "\n")
+cat("Estimación de tau:", sqrt(mean(tau2[-(1:1000)])), "\n")
+
+```
+
+-   **Estimación de beta0 (efecto base): 4.62**\
+    Esto indica que, en promedio, cuando la dosis es cero, se espera que los pacientes experimenten una **reducción promedio de 4.62 unidades** en su presión arterial. Comparando esto con el valor "real" simulado de 5, podemos ver que la estimación está cerca del valor verdadero.
+
+-   **Estimación de beta1 (efecto de la dosis): 2.07**\
+    Esta estimación implica que, en promedio, **por cada unidad adicional de dosis**, se espera que la presión arterial se reduzca **en 2.07 unidades**. En este caso, el valor verdadero era 2, por lo que la estimación también está bastante cercana al valor simulado.
+
+-   **Estimación de sigma: 0.62**\
+    Sigma es la desviación estándar del término de error (la variabilidad aleatoria que no se puede explicar por la dosis o las diferencias entre pacientes). Aquí, obtuvimos una estimación de 0.62, que es ligeramente menor al valor verdadero de 1 que fijamos al crear los datos. Esto podría sugerir que la variabilidad del error estimada en los datos generados es un poco menor de lo que esperábamos inicialmente, o simplemente podría ser una muestra específica que capturó una menor variabilidad.
+
+-   **Estimación de tau: 0.67**\
+    Tau es la desviación estándar de los **efectos aleatorios de los pacientes** (las diferencias individuales). La estimación de 0.67 está bastante cerca del valor verdadero de 0.5 que usamos en la simulación. Esto sugiere que el modelo ha capturado razonablemente bien las diferencias individuales entre los pacientes.
+
+5.   Generar una distribución normal bivariada con vector de medias (µ1,µ2), varianzas $$σ_1^{2}$$
+    $$σ_2^{2}$$ y correlación p usando el muestreador de Gibbs.
+
+    ```{r,echo=FALSE,warning=FALSE}
+    library(ggplot2)
+    # Parámetros de la distribución bivariada
+    mediaX <- 2        # Media de la primera variable
+    mediaY <- 3        # Media de la segunda variable
+    desv1 <- 1.5       # Desviación estándar de la primera variable
+    desv2 <- 1         # Desviación estándar de la segunda variable
+    correlacion <- 0.7 # Correlación entre las dos variables
+    total_muestras <- 10000 # Número de muestras
+
+    # Inicialización
+    valoresX <- numeric(total_muestras)
+    valoresY <- numeric(total_muestras)
+    valoresX[1] <- 0
+    valoresY[1] <- 0
+
+    # Función para el muestreador de Gibbs
+    muestreador_gibbs <- function(cant_muestras, mediaX, mediaY, desv1, desv2, correlacion) {
+      x <- numeric(cant_muestras)
+      y <- numeric(cant_muestras)
+      x[1] <- 0
+      y[1] <- 0
+
+      for (i in 2:cant_muestras) {
+        x[i] <- rnorm(1, mean = mediaX + correlacion * (desv1 / desv2) * (y[i-1] - mediaY), 
+                      sd = desv1 * sqrt(1 - correlacion^2))
+        y[i] <- rnorm(1, mean = mediaY + correlacion * (desv2 / desv1) * (x[i] - mediaX), 
+                      sd = desv2 * sqrt(1 - correlacion^2))
+      }
+      
+      return(data.frame(X = x, Y = y))
+    }
+
+    # Generar la distribución bivariada
+    datos_bivariados <- muestreador_gibbs(total_muestras, mediaX, mediaY, desv1, desv2, correlacion)
+
+    # Visualización de la distribución generada
+    plot(datos_bivariados$X, datos_bivariados$Y, 
+         main = "Distribución Normal Bivariada Generada por Muestreador de Gibbs", 
+         xlab = "Variable X", ylab = "Variable Y", 
+         col = rgb(0.2, 0.4, 0.6, 0.5), pch = 16)
+
+    ```
+
+### Análisis e Interpretación:
+
+1.  **Forma Elíptica**:
+    -   La forma elíptica indica que existe una correlación entre las dos variables. La dirección y el grado de la elipse reflejan la relación entre X1 y X2.
+2.  **Correlación**:
+    -   Dado que se utilizó un valor de correlación de 0.8, se observa una tendencia ascendente en la gráfica. Esto significa que a medida que los valores de X1 aumentan, los de X2 también tienden a aumentar.
+3.  **Ejemplo Práctico**:
+    -   Imagina que X1 representa la cantidad de horas que un estudiante estudia y X2 su calificación en un examen. La elipse mostrará que, generalmente, a más horas de estudio, más altas son las calificaciones, lo que resalta la relación positiva entre ambas variables.
